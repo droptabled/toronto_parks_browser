@@ -137,4 +137,7 @@ db.sqlite3
 media
 
 # Backup files
-*.bak 
+*.bak
+
+# Startup
+startup.sh
