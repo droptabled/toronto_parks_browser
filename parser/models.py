@@ -1,21 +1,20 @@
 from django.db import models
+import constants
 
 class District(models.Model):
     name = models.CharField(max_length=100)
 
 class Facility(models.Model):
     name = models.CharField(max_length=100)
+    slug = models.CharField(max_length=100)
+    image_url = models.CharField(max_length=255, null=True)
+    alt_text = models.CharField(max_length=100, null=True)
+
+    def page_link(self):
+        return f"{constants.BASE_URL}/data/parks/prd/facilities/ratings/index.html#{self.slug}"
 
 class FacilityTier(models.Model):
-    tier = models.CharField(
-        max_length=1,
-        choices=[
-            ('P', 'Premier'),
-            ('A', 'A'),
-            ('B','B'),
-            ('C', 'C')
-        ]
-    )
+    tier = models.CharField(max_length=10)
     facility = models.ForeignKey(Facility, on_delete=models.CASCADE, related_name="tiers")
     features = models.TextField()
 
