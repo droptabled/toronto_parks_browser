@@ -1,15 +1,10 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Toronto Parks Browser</title>
-</head>
+{% extends "browser/base.html" %}
+{% block content %}
 <body>
-<div id="app">
-    <!-- React will load here -->
-</div>
+    <div id="app">
+        <!-- React here -->
+    </div>
 </body>
 {% load static %}
-<script src="{% static "main.js" %}"></script>
-</html>
+<script src="{% static 'main.js' %}"></script>
+{% endblock content %}
