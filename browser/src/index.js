@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import React from 'react'
+import Facility from './components/facility';
 
 class App extends React.Component {
   constructor(props) {
@@ -12,7 +13,7 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    fetch("api/facilities")
+    fetch("api/facils")
       .then(response => {
         if (response.status > 400) {
           return this.setState(() => {
@@ -32,9 +33,9 @@ class App extends React.Component {
   render() {
     if(this.state.loaded) {
       return (
-        <ul>
-          
-        </ul>
+        this.state.data.facils.map((facil) =>
+          <Facility key={facil.id} data={facil} />
+        )
       );
     } else {
       return (
