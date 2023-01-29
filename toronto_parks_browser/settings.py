@@ -22,7 +22,6 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'browser.apps.BrowserConfig',
     'parser.apps.ParserConfig',
-    'poller.apps.PollerConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

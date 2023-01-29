@@ -33,9 +33,11 @@ class App extends React.Component {
   render() {
     if(this.state.loaded) {
       return (
-        this.state.data.facils.map((facil) =>
-          <Facility key={facil.id} data={facil} />
-        )
+        <div className='col-md-6'>
+          {this.state.data.facils.map((facil) =>
+            <Facility key={facil.id} data={facil} />
+          )}
+        </div>
       );
     } else {
       return (
