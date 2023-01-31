@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import React from 'react'
-import Facility from './components/facility';
+import Facility from '../components/facility';
 
 class App extends React.Component {
   constructor(props) {
@@ -13,7 +13,7 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    fetch("api/facils")
+    fetch("api/facilities")
       .then(response => {
         if (response.status > 400) {
           return this.setState(() => {
@@ -34,8 +34,8 @@ class App extends React.Component {
     if(this.state.loaded) {
       return (
         <div className='col-md-6'>
-          {this.state.data.facils.map((facil) =>
-            <Facility key={facil.id} data={facil} />
+          {this.state.data.facilities.map((facility) =>
+            <Facility key={facility.id} data={facility} />
           )}
         </div>
       );

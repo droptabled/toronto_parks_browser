@@ -6,8 +6,11 @@ from parser.models import *
 def index(request):
     return render(request, "browser/index.html")
 
-def facils(request):
-    data = { "facils": []}
+def facilities(request):
+    return render(request, "browser/facilities.html")
+
+def api_facilities(request):
+    data = { "facilities": []}
     for facility in Facility.objects.prefetch_related("tiers"):
         facility_data = {
             "id": facility.id,
@@ -21,5 +24,5 @@ def facils(request):
         for tier in facility.tiers.all():
             facility_data["availableTiers"].append(tier.tier)
 
-        data["facils"].append(facility_data)
+        data["facilities"].append(facility_data)
     return JsonResponse(data)
