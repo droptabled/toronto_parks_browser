@@ -33,10 +33,12 @@ class App extends React.Component {
   render() {
     if(this.state.loaded) {
       return (
-        <div className='col-md-6'>
-          {this.state.data.facilities.map((facility) =>
-            <Facility key={facility.id} data={facility} />
-          )}
+        <div className='container-fluid'>
+          <div className='row'>
+            {this.state.data.facilities.map((facility) =>
+              <Facility key={facility.id} data={facility} />
+            )}
+          </div>
         </div>
       );
     } else {
