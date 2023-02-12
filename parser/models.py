@@ -19,9 +19,11 @@ class FacilityTier(models.Model):
     features = models.TextField()
 
 class Location(models.Model):
+    park_id = models.IntegerField()
     name = models.CharField(max_length=100)
-    address1 = models.CharField(max_length=100)
+    address = models.CharField(max_length=100)
     district = models.ForeignKey(District, on_delete=models.CASCADE)
+    phone = models.CharField(max_length=12)
     facilities = models.ManyToManyField(Facility, through='LocationFacilities', related_name="locations")
 
 class LocationFacilities(models.Model):
@@ -35,3 +37,15 @@ class LocationFacilities(models.Model):
             models.UniqueConstraint(fields=['location', 'facility'], name='no_duplicate_facility_at_location'),
         ]
 
+class ProgramCategory(models.Model):
+    name = models.CharField(max_length=100)
+
+class Program(models.Model):
+    name = models.CharField(max_length=100)
+    program_category = models.ForeignKey(ProgramCategory, on_delete=models.CASCADE, related_name="programs")
+    lower_age = models.IntegerField()
+    upper_age = models.IntegerField()
+    date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    is_drop_in = models.BooleanField()
