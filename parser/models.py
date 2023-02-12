@@ -19,7 +19,7 @@ class FacilityTier(models.Model):
     features = models.TextField()
 
 class Location(models.Model):
-    park_id = models.IntegerField()
+    park_id = models.IntegerField(unique=True)
     name = models.CharField(max_length=100)
     address = models.CharField(max_length=100)
     district = models.ForeignKey(District, on_delete=models.CASCADE)
