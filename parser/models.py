@@ -13,7 +13,7 @@ class Facility(models.Model):
     def page_link(self):
         return f"{constants.BASE_URL}/data/parks/prd/facilities/ratings/index.html#{self.slug}"
 
-class FacilityTier(models.Model):
+class TierFacility(models.Model):
     tier = models.CharField(max_length=10)
     facility = models.ForeignKey(Facility, on_delete=models.CASCADE, related_name="tiers")
     features = models.TextField()
@@ -24,17 +24,17 @@ class Location(models.Model):
     address = models.CharField(max_length=100)
     district = models.ForeignKey(District, on_delete=models.CASCADE)
     phone = models.CharField(max_length=12)
-    facilities = models.ManyToManyField(Facility, through='LocationFacilities', related_name="locations")
+    tiered_facilities = models.ManyToManyField(TierFacility, through='LocationTierFacility', related_name="locations")
 
-class LocationFacilities(models.Model):
-    location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name="location_facilities")
-    facility = models.ForeignKey(Facility, on_delete=models.CASCADE, related_name="location_facilities")
+class LocationTierFacility(models.Model):
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name="location_tier_facilities")
+    tier_facility = models.ForeignKey(TierFacility, on_delete=models.CASCADE, related_name="location_tier_facilities")
     count = models.PositiveIntegerField()
     extra_description = models.CharField(max_length=255)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['location', 'facility'], name='no_duplicate_facility_at_location'),
+            models.UniqueConstraint(fields=['location', 'tier_facility'], name='no_duplicate_tier_facility_at_location'),
         ]
 
 class ProgramCategory(models.Model):
