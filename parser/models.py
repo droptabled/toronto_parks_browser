@@ -24,12 +24,12 @@ class Location(models.Model):
     address = models.CharField(max_length=100)
     district = models.ForeignKey(District, on_delete=models.CASCADE)
     phone = models.CharField(max_length=12)
-    tiered_facilities = models.ManyToManyField(TierFacility, through='LocationTierFacility', related_name="locations")
+    tier_facilities = models.ManyToManyField(TierFacility, through='LocationTierFacility', related_name="locations")
 
 class LocationTierFacility(models.Model):
     location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name="location_tier_facilities")
     tier_facility = models.ForeignKey(TierFacility, on_delete=models.CASCADE, related_name="location_tier_facilities")
-    count = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField()
     extra_description = models.CharField(max_length=255)
 
     class Meta:
