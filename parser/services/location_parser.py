@@ -1,4 +1,4 @@
-from parser.models import Location, District, Facility, LocationTierFacility, TierFacility
+from parser.models import Location, District, Facility, LocationTierFacility, ProgramCategory, TierFacility
 import requests
 import re
 from bs4 import BeautifulSoup
@@ -30,6 +30,7 @@ class LocationParser:
 
         self.location.save()
         self.parse_location_facilities()
+        self.parse_programs()
 
     def parse_location_facilities(self):
         self.location.location_tier_facilities.all().delete()
@@ -46,4 +47,25 @@ class LocationParser:
                 tier_facility, _ = TierFacility.objects.get_or_create(facility=facility, tier=tier)
                 LocationTierFacility(location=self.location, tier_facility=tier_facility, quantity=quantity).save()
         self.location.save()
+
+    def parse_programs(self):
+        programs_tab = self.main_page.find("div", id="pfrComplexTabs-dropin")
+        category_tabs = programs_tab.find_all("div", id=re.compile("content_dropintype_.*"))
+        True
+        for category_tab in category_tabs:
+            category_name = category_tab.attrs['id'].split('_')[-1]
+            category, _ = ProgramCategory.objects.get_or_create(name=category_name)
+
+            weekly_tabs = category_tab.find_all("tr", id=re.compile("dropin_.*"))
+            for weekly_tab in weekly_tabs:
+                table = weekly_tab.find("table")
+                # remove first cell of dates since its the program header
+                dates_row = [cell.text for cell in table.thead.find_all("th")][1:] 
+
+                program_rows = table.tbody.find_all("tr")
+                for program_row in program_rows:
+                    program_name = program_row.find("th").text
+                    cells = program_row.find_all("td")
+                    # do more program matching here
+
 
