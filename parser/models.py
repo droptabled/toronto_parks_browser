@@ -14,17 +14,17 @@ class Facility(models.Model):
         return f"{constants.BASE_URL}/data/parks/prd/facilities/ratings/index.html#{self.slug}"
 
 class TierFacility(models.Model):
-    tier = models.CharField(max_length=10)
     facility = models.ForeignKey(Facility, on_delete=models.CASCADE, related_name="tiers")
+    tier = models.CharField(max_length=10)
     features = models.TextField()
 
 class Location(models.Model):
+    district = models.ForeignKey(District, on_delete=models.CASCADE)
+    tier_facilities = models.ManyToManyField(TierFacility, through='LocationTierFacility', related_name="locations")
     park_id = models.IntegerField(unique=True)
     name = models.CharField(max_length=100)
     address = models.CharField(max_length=100)
-    district = models.ForeignKey(District, on_delete=models.CASCADE)
     phone = models.CharField(max_length=12)
-    tier_facilities = models.ManyToManyField(TierFacility, through='LocationTierFacility', related_name="locations")
 
 class LocationTierFacility(models.Model):
     location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name="location_tier_facilities")
@@ -41,11 +41,14 @@ class ProgramCategory(models.Model):
     name = models.CharField(max_length=100)
 
 class Program(models.Model):
-    name = models.CharField(max_length=100)
     program_category = models.ForeignKey(ProgramCategory, on_delete=models.CASCADE, related_name="programs")
+    name = models.CharField(max_length=100)
+    is_drop_in = models.BooleanField()
+
+class ProgramInstance(models.Model):
+    program = models.ForeignKey(Program, on_delete=models.CASCADE, related_name="instances")
     lower_age = models.IntegerField()
     upper_age = models.IntegerField()
     date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
-    is_drop_in = models.BooleanField()
