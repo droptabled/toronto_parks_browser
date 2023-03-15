@@ -1,6 +1,7 @@
-from parser.models import Location, District, Facility, LocationTierFacility, ProgramCategory, TierFacility
-import requests
 import re
+from parser.models import *
+
+import requests
 from bs4 import BeautifulSoup
 
 class LocationParser:
@@ -64,8 +65,53 @@ class LocationParser:
 
                 program_rows = table.tbody.find_all("tr")
                 for program_row in program_rows:
-                    program_name = program_row.find("th").text
+                    program_name, lower_age, upper_age = self.unpack_program_str(program_row.find("th").text)
+                    program, _ = Program.objects.get_or_create(program_category= category, name=program_name, is_drop_in=True)
+
                     cells = program_row.find_all("td")
-                    # do more program matching here
+                    times = [self.split_times(cell) for cell in cells]
+                    for idx, date_slots in enumerate(times):
+                        True
+                        # do more program matching here
+
+    # split <hr> separated BeautifulSoup td cell into array of times
+    @staticmethod
+    def split_times(cell):
+        children = [child.text.strip() for child in cell.children if child.text.strip()]
+        return children
+
+    # split string description of program into a name and age range
+    # returns program_name, lower_age, upper_age
+    @staticmethod
+    def unpack_program_str(str):
+        # split based on ( and )
+        split_arr = re.split('[\(\)]', str)
+        program_name = split_arr[0].strip()
+        lower = 1
+        upper = 99
+
+        # if there aren't any parens, no age limit is given, so apply defaults
+        if len(split_arr) <= 1:
+            return [program_name, lower, upper]
+
+        age_str = split_arr[1]
+
+        # TODO: figure out a better way to switch case this somehow?
+        lower_and_upper_match = re.match(r'(\d+) \- (\d+)yrs', age_str)
+        if lower_and_upper_match:
+            lower = lower_and_upper_match.group(1)
+            upper = lower_and_upper_match.group(2)
+
+        lower_match = re.match(r'(\d+)yrs and over', age_str)
+        if lower_match:
+            lower = lower_match.group(1)
+
+        upper_match = re.match(r'up to (\d+)yrs', age_str)
+        if upper_match:
+            upper = upper_match.group(1)
+
+
+        return [program_name, int(lower), int(upper)]
+
 
 
