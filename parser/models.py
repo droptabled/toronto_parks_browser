@@ -46,6 +46,7 @@ class Program(models.Model):
     is_drop_in = models.BooleanField()
 
 class ProgramInstance(models.Model):
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name="program_instances")
     program = models.ForeignKey(Program, on_delete=models.CASCADE, related_name="instances")
     lower_age = models.IntegerField()
     upper_age = models.IntegerField()
