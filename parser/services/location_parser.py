@@ -66,7 +66,8 @@ class LocationParser:
                 program_rows = table.tbody.find_all("tr")
                 for idx, program_row in enumerate(program_rows):
                     program_name, lower_age, upper_age = self.unpack_program_str(program_row.find("th").text)
-                    program, _ = Program.objects.get_or_create(program_category= category, name=program_name, is_drop_in=True)                    ProgramInstance.objects.where(location=self.location, program=program, ).delete()
+                    program, _ = Program.objects.get_or_create(program_category= category, name=program_name, is_drop_in=True)
+                    ProgramInstance.objects.where(location=self.location, program=program, ).delete()
 
                     cells = program_row.find_all("td")
                     times = [self.split_times(cell) for cell in cells]
