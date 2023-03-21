@@ -1,13 +1,14 @@
+from datetime import datetime
 import re
 from parser.models import *
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, ResultSet, Tag
 
 class LocationParser:
     """Parsing info for a specific location"""
 
-    def __init__(self, url):
+    def __init__(self, url: str):
         self.main_page = BeautifulSoup(requests.get(url).text, 'html.parser')
 
         partial = re.search("complex/\d+/", url)[0]
@@ -62,36 +63,49 @@ class LocationParser:
                 table = weekly_tab.find("table")
                 # remove first cell of dates since its the program header
                 dates_row = [cell.text for cell in table.thead.find_all("th")][1:] 
-
                 program_rows = table.tbody.find_all("tr")
+
                 for idx, program_row in enumerate(program_rows):
                     program_name, lower_age, upper_age = self.unpack_program_str(program_row.find("th").text)
                     program, _ = Program.objects.get_or_create(program_category= category, name=program_name, is_drop_in=True)
-                    ProgramInstance.objects.where(location=self.location, program=program, ).delete()
+
+                    date_str = f"{dates_row[idx]} {datetime.today().year}"
+                    full_date = datetime.strptime(date_str, "%a %b %d %Y")
+                    program_instance = ProgramInstance(
+                        location=self.location,
+                        program=program,
+                        lower_age=lower_age,
+                        upper_age=upper_age,
+                        date=full_date.date()
+                    )
 
                     cells = program_row.find_all("td")
-                    times = [self.split_times(cell) for cell in cells]
-                    
+                    self.assign_times(program_instance, cells)
 
     # clear the old times for that date
     # then create new ones
-    def assign_times(self, program, date, times):
+    def assign_times(self, program_instance: ProgramInstance, cells: ResultSet):
         # delete the old program instance on the same date
-        self.location.program_instances.filter(date__date=date).delete_all()
+        self.location.program_instances.filter(date=program_instance.date).delete()
+
+        times = [self.split_times(cell) for cell in cells]
         for idx, date_slots in enumerate(times):
-            ProgramInstance.objects.create()
+            new_program_instance = program_instance
+            ProgramInstance.objects.create(
+                location=self.location,
+            )
             # do more program matching here
 
     # split <hr> separated BeautifulSoup td cell into array of times
     @staticmethod
-    def split_times(cell):
+    def split_times(cell: Tag):
         children = [child.text.strip() for child in cell.children if child.text.strip()]
         return children
 
     # split string description of program into a name and age range
     # returns program_name, lower_age, upper_age
     @staticmethod
-    def unpack_program_str(str):
+    def unpack_program_str(str: str):
         # split based on ( and )
         split_arr = re.split('[\(\)]', str)
         program_name = split_arr[0].strip()
