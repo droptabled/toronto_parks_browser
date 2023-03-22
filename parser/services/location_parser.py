@@ -53,7 +53,7 @@ class LocationParser:
     def parse_programs(self):
         programs_tab = self.main_page.find("div", id="pfrComplexTabs-dropin")
         category_tabs = programs_tab.find_all("div", id=re.compile("content_dropintype_.*"))
-        True
+
         for category_tab in category_tabs:
             category_name = category_tab.attrs['id'].split('_')[-1]
             category, _ = ProgramCategory.objects.get_or_create(name=category_name)
@@ -81,6 +81,7 @@ class LocationParser:
 
                     cells = program_row.find_all("td")
                     self.assign_times(program_instance, cells)
+        return True
 
     # clear the old times for that date
     # then create new ones
@@ -88,12 +89,19 @@ class LocationParser:
         # delete the old program instance on the same date
         self.location.program_instances.filter(date=program_instance.date).delete()
 
-        times = [self.split_times(cell) for cell in cells]
-        for idx, date_slots in enumerate(times):
-            new_program_instance = program_instance
-            ProgramInstance.objects.create(
-                location=self.location,
-            )
+        weekly_times = [self.split_times(cell) for cell in cells]
+        for idx, daily_times in enumerate(weekly_times):
+            for daily_time in daily_times:
+                start_time, end_time = self.unpack_time_str(daily_time)
+                ProgramInstance.objects.create(
+                    location=self.location,
+                    program=program_instance.program,
+                    lower_age=program_instance.lower_age,
+                    upper_age=program_instance.upper_age,
+                    date=program_instance.date,
+                    start_time=start_time,
+                    end_time=end_time
+                )
             # do more program matching here
 
     # split <hr> separated BeautifulSoup td cell into array of times
@@ -137,3 +145,23 @@ class LocationParser:
             match_found = True
 
         return [program_name, int(lower), int(upper)]
+
+    # split string of program time str into a start and end datetime.time
+    # returns start time, end time
+    @staticmethod
+    def unpack_time_str(str: str):
+        start_str, end_str = str.split('-')
+        start_str = start_str.strip()
+        end_str = end_str.strip()
+
+        # the end time always has a meridian indicator (am/pm)
+        end_time = datetime.strptime(end_str, '%H:%M%p').time()
+
+        # start time does not have a meridian indicator if it is the same as the end
+        start_12h = re.match("[A-Za-z]+", start_str)
+        if not start_12h:
+            end_12h = re.match("[A-Za-z]+", end_str).group(0)
+            start_str = start_str + end_12h
+        start_time = datetime.strptime(start_str, '%H:%M%p').time()
+
+        return [start_time, end_time]
