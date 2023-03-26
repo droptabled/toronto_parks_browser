@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 import re
 from parser.models import *
 
@@ -62,47 +62,51 @@ class LocationParser:
             for weekly_tab in weekly_tabs:
                 table = weekly_tab.find("table")
                 # remove first cell of dates since its the program header
-                dates_row = [cell.text for cell in table.thead.find_all("th")][1:] 
+                dates_text = [cell.text for cell in table.thead.find_all("th")][1:]
+                # parse the dates, and then delete all old programs on those dates
+                dates = []
+                for date_text in dates_text:
+                    date = datetime.strptime(f"{date_text} {datetime.today().year}", "%a %b %d %Y").date()
+                    dates.append(date)
+                    ProgramInstance.objects.filter(date=date, location=self.location).delete()
+
                 program_rows = table.tbody.find_all("tr")
-
-                for idx, program_row in enumerate(program_rows):
+                for program_row in program_rows:
                     program_name, lower_age, upper_age = self.unpack_program_str(program_row.find("th").text)
-                    program, _ = Program.objects.get_or_create(program_category= category, name=program_name, is_drop_in=True)
-
-                    date_str = f"{dates_row[idx]} {datetime.today().year}"
-                    full_date = datetime.strptime(date_str, "%a %b %d %Y")
-                    program_instance = ProgramInstance(
-                        location=self.location,
-                        program=program,
-                        lower_age=lower_age,
-                        upper_age=upper_age,
-                        date=full_date.date()
-                    )
-
+                    program, _ = Program.objects.get_or_create(program_category=category, name=program_name, is_drop_in=True)
                     cells = program_row.find_all("td")
-                    self.assign_times(program_instance, cells)
+
+                    program_details = {
+                        "location": self.location,
+                        "program": program,
+                        "lower_age": lower_age,
+                        "upper_age": upper_age,
+                    }
+
+                    self.assign_times(program_details, dates, cells)
         return True
 
-    # clear the old times for that date
-    # then create new ones
-    def assign_times(self, program_instance: ProgramInstance, cells: ResultSet):
-        # delete the old program instance on the same date
-        self.location.program_instances.filter(date=program_instance.date).delete()
+    # takes some ProgramInstance args and a set of dates and times
+    # creates one new ProgramInstance for each time interval
+    def assign_times(self, program_details: dict, dates: list[date], week_cells: ResultSet):
+        week_times = [self.split_times(week_cell) for week_cell in week_cells]
+        program_instance_list = []
 
-        weekly_times = [self.split_times(cell) for cell in cells]
-        for idx, daily_times in enumerate(weekly_times):
-            for daily_time in daily_times:
-                start_time, end_time = self.unpack_time_str(daily_time)
-                ProgramInstance.objects.create(
-                    location=self.location,
-                    program=program_instance.program,
-                    lower_age=program_instance.lower_age,
-                    upper_age=program_instance.upper_age,
-                    date=program_instance.date,
-                    start_time=start_time,
-                    end_time=end_time
+        for idx, day_times in enumerate(week_times):
+            program_date = dates[idx]
+
+            for program_time in day_times:
+                start_time, end_time = self.unpack_time_str(program_time)
+                program_instance_list.append(
+                    ProgramInstance(
+                        date=program_date,
+                        start_time=start_time,
+                        end_time=end_time,
+                        **program_details
+                    )
                 )
-            # do more program matching here
+
+        ProgramInstance.objects.bulk_create(program_instance_list)
 
     # split <hr> separated BeautifulSoup td cell into array of times
     @staticmethod
@@ -155,13 +159,22 @@ class LocationParser:
         end_str = end_str.strip()
 
         # the end time always has a meridian indicator (am/pm)
-        end_time = datetime.strptime(end_str, '%H:%M%p').time()
-
-        # start time does not have a meridian indicator if it is the same as the end
-        start_12h = re.match("[A-Za-z]+", start_str)
+        end_time = LocationParser.str_to_time(end_str)
+        # if start time does not have a meridian indicator if it is the same as the end
+        start_12h = re.search("[A-Za-z]+", start_str)
         if not start_12h:
-            end_12h = re.match("[A-Za-z]+", end_str).group(0)
+            end_12h = re.search("[A-Za-z]+", end_str).group(0)
             start_str = start_str + end_12h
-        start_time = datetime.strptime(start_str, '%H:%M%p').time()
+        start_time = LocationParser.str_to_time(start_str)
 
         return [start_time, end_time]
+
+    # convert string to time, using the different city of toronto time formats
+    @staticmethod
+    def str_to_time(str: str):
+        for fmt in ("%I:%M%p", '%I%p'):
+            try:
+                return datetime.strptime(str, fmt)
+            except ValueError:
+                pass
+        raise "Coulding find time"
